@@ -6,6 +6,7 @@ import android.graphics.Canvas;
 import android.graphics.Paint;
 import android.graphics.Point;
 import android.util.AttributeSet;
+import android.util.Log;
 import android.view.MotionEvent;
 import android.view.View;
 import android.graphics.Bitmap;
@@ -30,7 +31,11 @@ public class WuziqiPanel extends View {
     private float pieceRatio = 3 * 1.0f / 4;
 
     //白棋先下或当前轮到白棋
+<<<<<<< HEAD
     private boolean mIsWhite = true;
+=======
+    public boolean mIsWhite = true;
+>>>>>>> 五子棋总体实现玩家对战 悔棋 退游 再来一局
     private List<Point> mWhiteArray = new ArrayList<>();  //动态数组存储白棋坐标
     private List<Point> mBlackArray = new ArrayList<>();
 
@@ -125,9 +130,15 @@ public class WuziqiPanel extends View {
     @Override
     public void onDraw(Canvas canvas) {
         super.onDraw(canvas);
+<<<<<<< HEAD
         
         draw.drawBoard(canvas,mPaint,mPanelWidth,mLineHeight);  //绘制棋盘
 
+=======
+
+        draw.drawBoard(canvas,mPaint,mPanelWidth,mLineHeight);  //绘制棋盘
+
+>>>>>>> 五子棋总体实现玩家对战 悔棋 退游 再来一局
         draw.drawPieces(canvas,mWhiteArray,mBlackArray,mWhitePiece,mBlackPiece,mLineHeight); //绘制棋子
         checkGameOver();   //判断游戏是否结束
     }
@@ -144,6 +155,32 @@ public class WuziqiPanel extends View {
         }
     }
 
+<<<<<<< HEAD
+=======
+
+
+    public void reMoveBlack(){
+        if(mIsWhite) {
+            int size = mBlackArray.size();
+            mBlackArray.remove(size - 1);
+
+            invalidate();
+            mIsWhite = !mIsWhite;
+//            Log.i("黑棋","悔棋"+mIsWhite);
+        }
+    }
+
+    public void reMoveWhite(){
+        if(!mIsWhite) {
+            int size = mWhiteArray.size();
+            mWhiteArray.remove(size - 1);
+            invalidate();
+            mIsWhite = !mIsWhite;
+//            Log.i("白棋","悔棋"+mIsWhite);
+        }
+    }
+
+>>>>>>> 五子棋总体实现玩家对战 悔棋 退游 再来一局
 //    再来一局
     public void restart(){
         mWhiteArray.clear();

@@ -10,12 +10,12 @@ import android.view.MotionEvent;
 import android.view.View;
 import android.graphics.Bitmap;
 import android.widget.Toast;
-
 import java.util.ArrayList;
 import java.util.List;
 
 
 public class WuziqiPanel extends View {
+
 
     private int mPanelWidth;
     private float mLineHeight;
@@ -24,29 +24,32 @@ public class WuziqiPanel extends View {
     private  Paint mPaint = new Paint();
 
     //棋子
-    private Bitmap mWhitePiece;
+    private Bitmap mWhitePiece;     //位图    操作图片
     private Bitmap mBlackPiece;
 
     private float pieceRatio = 3 * 1.0f / 4;
 
     //白棋先下或当前轮到白棋
     private boolean mIsWhite = true;
-    private List<Point> mWhiteArray = new ArrayList<>();  //存储白棋坐标
+    private List<Point> mWhiteArray = new ArrayList<>();  //动态数组存储白棋坐标
     private List<Point> mBlackArray = new ArrayList<>();
 
     private boolean mIsGameOver;
     private  boolean mIsWhiteWinner;
 
-    private int MAX_COUNT_IN_LINE = 5;
+
+    private Draw draw = new Draw();
+
+    private checkFiveInLine check = new checkFiveInLine();
 
     public WuziqiPanel(Context context, AttributeSet attrs) {
         super(context, attrs);
-        setBackgroundColor(0x44ff0000);
+//        setBackgroundColor(0x44ff0000);
         init();
     }
 
     //对画笔paint进行初始化
-    private void init() {
+    public void init() {
         mPaint.setColor(0x88000000);
         mPaint.setAntiAlias(true);
         mPaint.setDither(true);
@@ -57,7 +60,7 @@ public class WuziqiPanel extends View {
     }
 
     @Override
-    protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
+    public void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
         int widthSize = MeasureSpec.getSize(widthMeasureSpec);
         int widthMode = MeasureSpec.getMode(widthMeasureSpec);
 
@@ -77,7 +80,7 @@ public class WuziqiPanel extends View {
 
     //初始化棋盘
     @Override
-    protected void onSizeChanged(int w, int h, int oldw, int oldh) {
+    public void onSizeChanged(int w, int h, int oldw, int oldh) {
         super.onSizeChanged(w, h, oldw, oldh);
 
         mPanelWidth = w;
@@ -115,23 +118,23 @@ public class WuziqiPanel extends View {
     }
 
     //避免不同子落在同一位置
-    private Point getValidPoint(int x, int y) {
+    public Point getValidPoint(int x, int y) {
         return new Point((int)(x / mLineHeight), (int)(y / mLineHeight));
     }
 
     @Override
-    protected void onDraw(Canvas canvas) {
+    public void onDraw(Canvas canvas) {
         super.onDraw(canvas);
         
-        drawBoard(canvas);
+        draw.drawBoard(canvas,mPaint,mPanelWidth,mLineHeight);  //绘制棋盘
 
-        drawPieces(canvas); //绘制棋子
+        draw.drawPieces(canvas,mWhiteArray,mBlackArray,mWhitePiece,mBlackPiece,mLineHeight); //绘制棋子
         checkGameOver();   //判断游戏是否结束
     }
 
-    private void checkGameOver() {
-        boolean whiteWin = checkFiveInLine(mWhiteArray);
-        boolean blackWin = checkFiveInLine(mBlackArray);
+    public void checkGameOver() {
+        boolean whiteWin = check.checkFiveInLine(mWhiteArray);
+        boolean blackWin = check.checkFiveInLine(mBlackArray);
 
         if(whiteWin || blackWin){
             mIsGameOver = true;
@@ -140,162 +143,13 @@ public class WuziqiPanel extends View {
             Toast.makeText(getContext(),text,Toast.LENGTH_SHORT).show();
         }
     }
-	
-	private void drawPieces(Canvas canvas) {
 
-        //绘制白子
-        for(int i = 0,n = mWhiteArray.size();i < n ;i++){
-            Point whitePoint = mWhiteArray.get(i);
-            canvas.drawBitmap(mWhitePiece,
-                    (whitePoint.x + (1 - pieceRatio) / 2) * mLineHeight,
-                    (whitePoint.y + (1 - pieceRatio) / 2) * mLineHeight, null);
-        }
-
-        //绘制黑子
-        for(int i = 0,n = mBlackArray.size();i < n ;i++){
-            Point blackPoint = mBlackArray.get(i);
-            canvas.drawBitmap(mBlackPiece,
-                    (blackPoint.x + (1 - pieceRatio) / 2) * mLineHeight,
-                    (blackPoint.y + (1 - pieceRatio) / 2) * mLineHeight, null);
-        }
+//    再来一局
+    public void restart(){
+        mWhiteArray.clear();
+        mBlackArray.clear();
+        mIsGameOver = false;
+        mIsWhiteWinner = false;
+        invalidate();
     }
-
-    //绘制棋盘
-    private void drawBoard(Canvas canvas) {
-        int w = mPanelWidth;
-        float lineHeight = mLineHeight;
-
-
-        for(int i = 0; i < MAX_LINE; i++){
-            int startX = (int)(lineHeight/2);
-            int endX = (int)(w-lineHeight/2);
-
-            int y = (int) (( 0.5 + i) * lineHeight);
-            canvas.drawLine(startX, y , endX, y, mPaint);//划横线
-            canvas.drawLine(y, startX, y, endX, mPaint);
-        }
-
-    }
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	private boolean checkFiveInLine(List<Point> points) {
-        for(Point p : points){
-            int x = p.x;
-            int y = p.y;
-
-            boolean win = checkHorizontal(x,y,points);
-            if(win) return true;
-            win = checkVertical(x,y,points);
-            if(win) return true;
-            win = checkYouxie(x,y,points);
-            if(win) return true;
-            win = checkZuoxie(x,y,points);
-            if(win) return true;
-        }
-        return false;
-    }
-
-    //判断x,y位置的棋子是否横向有五个相邻的
-    private boolean checkHorizontal(int x, int y, List<Point> points) {
-       int count = 1;
-        //左边
-        for(int i = 1; i < MAX_COUNT_IN_LINE; i++){
-            if(points.contains(new Point(x-i,y)))
-                count++;
-            else
-                break;
-        }
-        if(count == MAX_COUNT_IN_LINE) return true;
-
-        //右边
-        for(int i = 1; i < MAX_COUNT_IN_LINE; i++){
-            if(points.contains(new Point(x+i,y)))
-                count++;
-            else
-                break;
-        }
-        if(count == MAX_COUNT_IN_LINE) return true;
-
-        return false;
-    }
-
-    //判断x,y位置的棋子是否纵向有五个相邻的
-    private boolean checkVertical(int x, int y, List<Point> points) {
-        int count = 1;
-        //上
-        for(int i = 1; i < MAX_COUNT_IN_LINE; i++){
-            if(points.contains(new Point(x,y-i)))
-                count++;
-            else
-                break;
-        }
-        if(count == MAX_COUNT_IN_LINE) return true;
-
-        //下
-        for(int i = 1; i < MAX_COUNT_IN_LINE; i++){
-            if(points.contains(new Point(x,y+i)))
-                count++;
-            else
-                break;
-        }
-        if(count == MAX_COUNT_IN_LINE) return true;
-
-        return false;
-    }
-
-    //判断x,y位置的棋子是否左斜向向有五个相邻的
-    private boolean checkZuoxie(int x, int y, List<Point> points) {
-        int count = 1;
-        //左下斜
-        for(int i = 1; i < MAX_COUNT_IN_LINE; i++){
-            if(points.contains(new Point(x-i,y+i)))
-                count++;
-            else
-                break;
-        }
-        if(count == MAX_COUNT_IN_LINE) return true;
-
-        //左上斜
-        for(int i = 1; i < MAX_COUNT_IN_LINE; i++){
-            if(points.contains(new Point(x+i,y-i)))
-                count++;
-            else
-                break;
-        }
-        if(count == MAX_COUNT_IN_LINE) return true;
-
-        return false;
-    }
-
-    //判断x,y位置的棋子是否右斜向有五个相邻的
-    private boolean checkYouxie(int x, int y, List<Point> points) {
-        int count = 1;
-        //右上斜
-        for(int i = 1; i < MAX_COUNT_IN_LINE; i++){
-            if(points.contains(new Point(x-i,y-i)))
-                count++;
-            else
-                break;
-        }
-        if(count == MAX_COUNT_IN_LINE) return true;
-
-        //右下斜
-        for(int i = 1; i < MAX_COUNT_IN_LINE; i++){
-            if(points.contains(new Point(x+i,y+i)))
-                count++;
-            else
-                break;
-        }
-        if(count == MAX_COUNT_IN_LINE) return true;
-
-        return false;
-    }
-    
 }
